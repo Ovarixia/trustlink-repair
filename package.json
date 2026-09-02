@@ -1,0 +1,52 @@
+{
+  "name": "trustlink-repair",
+  "version": "0.1.0",
+  "description": "Revoking OAuth does not repair what the identity already did — TrustLink Repair handles the aftermath (synthetic Salesforce / Slack / GitHub demo).",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "trustlink-repair": "./dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo": "tsx src/cli.ts demo",
+    "ui": "tsx src/cli.ts ui",
+    "start": "tsx src/cli.ts demo",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ovarixia/trustlink-repair.git"
+  },
+  "keywords": [
+    "security",
+    "oauth",
+    "incident-response",
+    "identity",
+    "compensation",
+    "saas"
+  ],
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}
