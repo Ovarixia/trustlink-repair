@@ -5,7 +5,9 @@ export function computeMetrics(run: Omit<RunResult, "metrics">, timeMs: number):
   const repairable = run.effects.filter(
     (e) => e.classification === "reversible" || e.classification === "compensable",
   );
-  const repaired = run.steps.filter((s) => s.outcome === "executed");
+  const repaired = run.steps.filter(
+    (s) => (s.outcome === "executed" || s.outcome === "already_satisfied") && s.postcondition?.holds === true,
+  );
   const unknownAbstentions = run.steps.filter((s) => s.outcome === "abstained_unknown").length;
   const irreversibleLeft = run.effects.filter((e) => e.classification === "irreversible").length;
 
@@ -34,7 +36,9 @@ export function computeMetrics(run: Omit<RunResult, "metrics">, timeMs: number):
 
 function countResidual(run: Omit<RunResult, "metrics">): number {
   const executed = new Set(
-    run.steps.filter((s) => s.outcome === "executed").map((s) => s.effectId),
+    run.steps
+      .filter((s) => (s.outcome === "executed" || s.outcome === "already_satisfied") && s.postcondition?.holds === true)
+      .map((s) => s.effectId),
   );
   return run.effects.filter((e) => {
     if (e.classification === "irreversible" || e.classification === "UNKNOWN") return true;
@@ -43,5 +47,8 @@ function countResidual(run: Omit<RunResult, "metrics">): number {
 }
 
 function countFalseUndoPositives(steps: StepResult[]): number {
-  return steps.filter((s) => s.outcome === "executed" && s.detail.includes("FALSE_UNDO")).length;
+  return steps.filter(
+    (step) => step.claimedFullyUndone === true &&
+      (step.postcondition?.holds !== true || step.residualRemains !== false),
+  ).length;
 }

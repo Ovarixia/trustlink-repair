@@ -69,7 +69,9 @@ export function renderTerminal(report: ComparisonReport): string {
   lines.push(`${C.bold}Ordered plan (TrustLink)${C.reset}`);
   for (const step of t.plan) {
     const result = t.steps.find((s) => s.effectId === step.compensation.effectId);
-    const mark = result?.outcome === "executed" ? `${C.green}executed${C.reset}` : result?.outcome;
+    const mark = result?.outcome === "executed" || result?.outcome === "already_satisfied"
+      ? `${C.green}${result.outcome}${C.reset}`
+      : result?.outcome;
     lines.push(
       `  ${String(step.order).padStart(2)}. [${step.compensation.mode}] ${step.compensation.summary}  → ${mark}`,
     );
@@ -118,10 +120,11 @@ function classifyLine(t: RunResult): string {
 
 function execLine(t: RunResult): string {
   const executed = t.steps.filter((s) => s.outcome === "executed").length;
+  const satisfied = t.steps.filter((s) => s.outcome === "already_satisfied").length;
   const blocked = t.steps.filter((s) => s.outcome === "blocked_by_simulation").length;
   const abstained = t.steps.filter((s) => s.outcome === "abstained_unknown").length;
   const irr = t.steps.filter((s) => s.outcome === "skipped_irreversible").length;
-  return `${executed} executed, ${blocked} blocked by simulation, ${irr} irreversible skipped, ${abstained} UNKNOWN abstained`;
+  return `${executed} executed, ${satisfied} already satisfied, ${blocked} blocked by simulation, ${irr} irreversible skipped, ${abstained} UNKNOWN abstained`;
 }
 
 export function renderComparisonTable(t: Metrics, r: Metrics): string {

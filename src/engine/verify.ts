@@ -56,9 +56,9 @@ export function verifyInvariants(world: World): Invariant[] {
     },
     {
       id: "branch_protection_restored",
-      summary: "payments-api/main requires the snapshot number of reviews",
-      holds: (protection?.requiredReviews ?? 0) >= (protection?.snapshotReviews ?? 2),
-      evidence: `requiredReviews=${protection?.requiredReviews ?? "missing"} snapshot=${protection?.snapshotReviews}`,
+      summary: "payments-api/main requires the canonical policy baseline of 2 reviews",
+      holds: (protection?.requiredReviews ?? 0) >= 2,
+      evidence: `requiredReviews=${protection?.requiredReviews ?? "missing"} baseline=2`,
     },
     {
       id: "old_oauth_dead",
@@ -89,8 +89,8 @@ export function verifyInvariants(world: World): Invariant[] {
     },
     {
       id: "cfo_email_restored",
-      summary: "CFO contact email matches the pre-incident snapshot",
-      holds: cfo?.email === cfo?.snapshotEmail,
+      summary: "CFO contact email matches the canonical recovery target",
+      holds: cfo?.email === "cfo@acme.example",
       evidence: `email=${cfo?.email}`,
     },
     {

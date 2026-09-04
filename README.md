@@ -87,6 +87,10 @@ npm run typecheck
 
 GitHub Actions runs typecheck, tests, and `npm run demo` on Node 20 and 22.
 
+## Recovery assurance suite
+
+This repository is stage B of [Cyber Recovery Assurance](https://github.com/Ovarixia/cyber-recovery-assurance). Its native report is accepted only when repair coverage is complete, all invariants hold, false-undo positives and leftover attack paths are zero, and every UNKNOWN remains an explicit abstention. The report digest is then bound into EvidenceEnvelope v1.
+
 ## License
 
 [MIT](./LICENSE). See [CONTRIBUTING.md](./CONTRIBUTING.md) and [SECURITY.md](./SECURITY.md).

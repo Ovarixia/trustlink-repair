@@ -60,6 +60,12 @@ export interface Compensation {
   summary: string;
   /** Inverse of exact state vs risk-reducing compensation. */
   mode: "inverse" | "compensate";
+  /** Immutable coordinates of the one resource this compensation may change. */
+  target: {
+    resource: string;
+    identifiers: Record<string, string>;
+    expected: Record<string, string | number | boolean>;
+  };
 }
 
 export interface PlanStep {
@@ -72,9 +78,11 @@ export type StepOutcome =
   | "simulated_ok"
   | "simulated_fail"
   | "executed"
+  | "already_satisfied"
   | "abstained_unknown"
   | "skipped_irreversible"
   | "blocked_by_simulation"
+  | "postcondition_failed"
   | "not_attempted";
 
 export interface StepResult {
@@ -84,6 +92,9 @@ export interface StepResult {
   planned?: PlanStep;
   outcome: StepOutcome;
   detail: string;
+  postcondition?: { holds: boolean; evidence: string };
+  residualRemains?: boolean;
+  claimedFullyUndone?: boolean;
 }
 
 export interface Invariant {

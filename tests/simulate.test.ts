@@ -12,6 +12,7 @@ const paymentVoid: Compensation = {
   kind: "void_finalized_payment",
   summary: "Naive void",
   mode: "inverse",
+  target: { resource: "salesforce.payment", identifiers: { id: "pmt-18400" }, expected: {} },
 };
 
 const recallExfil: Compensation = {
@@ -22,6 +23,7 @@ const recallExfil: Compensation = {
   kind: "recall_exfil",
   summary: "Naive recall",
   mode: "inverse",
+  target: { resource: "salesforce.export", identifiers: { id: "export-leads" }, expected: {} },
 };
 
 describe("simulation fail-closed", () => {

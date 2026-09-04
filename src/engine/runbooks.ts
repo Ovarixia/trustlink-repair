@@ -1,7 +1,7 @@
 import { seedMutations } from "../fixtures.js";
 import type { RunResult, StepResult } from "../types.js";
 import { cloneWorld, type World } from "../world.js";
-import { applyCompensation, simulateCompensation } from "./apply.js";
+import { applyCompensation, simulateCompensation, verifyCompensationPostcondition } from "./apply.js";
 import { freezeIdentity, revokeOAuth } from "./freeze-revoke.js";
 import { buildCausalGraph, flattenEffects } from "./graph.js";
 import { computeMetrics } from "./metrics.js";
@@ -43,15 +43,38 @@ export function runTrustLink(world: World): RunResult {
     const effect = effects.find((e) => e.id === planned.compensation.effectId);
     if (!effect) continue;
 
-    const sim = simulateCompensation(cloneWorld(world), planned.compensation);
-    if (!sim.ok) {
+    const existingPostcondition = verifyCompensationPostcondition(world, planned.compensation);
+    if (existingPostcondition.holds) {
+      const claimedFullyUndone = effect.classification === "reversible";
+      if (claimedFullyUndone && !world.claimedFullyUndone.includes(effect.id)) {
+        world.claimedFullyUndone.push(effect.id);
+      }
+      steps.push({
+        effectId: effect.id,
+        mutationId: effect.mutationId,
+        classification: effect.classification,
+        planned,
+        outcome: "already_satisfied",
+        detail: `Exact target postcondition was already satisfied: ${existingPostcondition.evidence}`,
+        postcondition: existingPostcondition,
+        residualRemains: effect.classification === "compensable",
+        claimedFullyUndone,
+      });
+      continue;
+    }
+
+    const simulationWorld = cloneWorld(world);
+    const sim = simulateCompensation(simulationWorld, planned.compensation);
+    const simulatedPostcondition = verifyCompensationPostcondition(simulationWorld, planned.compensation);
+    if (!sim.ok || !simulatedPostcondition.holds) {
       steps.push({
         effectId: effect.id,
         mutationId: effect.mutationId,
         classification: effect.classification,
         planned,
         outcome: "blocked_by_simulation",
-        detail: `Simulation failed closed: ${sim.detail}`,
+        detail: `Simulation failed closed: ${sim.detail}; ${simulatedPostcondition.evidence}`,
+        postcondition: simulatedPostcondition,
       });
       continue;
     }
@@ -69,8 +92,25 @@ export function runTrustLink(world: World): RunResult {
       continue;
     }
 
+    const postcondition = verifyCompensationPostcondition(world, planned.compensation);
+    if (!postcondition.holds) {
+      steps.push({
+        effectId: effect.id,
+        mutationId: effect.mutationId,
+        classification: effect.classification,
+        planned,
+        outcome: "postcondition_failed",
+        detail: `Execution did not satisfy the exact target postcondition: ${postcondition.evidence}`,
+        postcondition,
+        residualRemains: true,
+        claimedFullyUndone: false,
+      });
+      continue;
+    }
+
     world.executedCompensations.push(planned.compensation.id);
-    if (!applied.residualRemains && effect.classification === "reversible") {
+    const claimedFullyUndone = !applied.residualRemains && effect.classification === "reversible";
+    if (claimedFullyUndone) {
       world.claimedFullyUndone.push(effect.id);
     }
 
@@ -81,6 +121,9 @@ export function runTrustLink(world: World): RunResult {
       planned,
       outcome: "executed",
       detail: applied.detail,
+      postcondition,
+      residualRemains: applied.residualRemains,
+      claimedFullyUndone,
     });
   }
 

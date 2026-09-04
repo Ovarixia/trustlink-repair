@@ -57,4 +57,12 @@ describe("inverse plan", () => {
     const collab = plan.find((p) => p.compensation.mutationId === "m13-gh-collab");
     expect(push && collab && push.order < collab.order).toBe(true);
   });
+
+  it("fails closed when a mutation reuses an effect id for another target", () => {
+    const mutations = seedMutations();
+    const report = mutations.find((mutation) => mutation.id === "m02-sf-share-report");
+    expect(report).toBeDefined();
+    report!.target = "Report:unrelated-sensitive-report";
+    expect(() => proposePlan(mutations)).toThrow(/target-bound compensation spec/);
+  });
 });
