@@ -35,14 +35,16 @@ export function computeMetrics(run: Omit<RunResult, "metrics">, timeMs: number):
 }
 
 function countResidual(run: Omit<RunResult, "metrics">): number {
-  const executed = new Set(
+  const repaired = new Map(
     run.steps
       .filter((s) => (s.outcome === "executed" || s.outcome === "already_satisfied") && s.postcondition?.holds === true)
-      .map((s) => s.effectId),
+      .map((s) => [s.effectId, s] as const),
   );
   return run.effects.filter((e) => {
     if (e.classification === "irreversible" || e.classification === "UNKNOWN") return true;
-    return !executed.has(e.id);
+    const step = repaired.get(e.id);
+    if (!step) return true;
+    return step.residualRemains === true;
   }).length;
 }
 

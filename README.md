@@ -2,6 +2,44 @@
 
 **Revoking OAuth does not repair what the identity already did — TrustLink Repair handles the aftermath.**
 
+## One scenario, start to finish
+
+Compromised identity **alex.chen@acme.example** is frozen, then its three OAuth tokens are revoked. That stops new API calls from the identity. It does not pull back a payment that already posted.
+
+**The line you cannot undo** is the finalized **$18,400** vendor payment (`eff-m06-sf-payment-money`). The engine classifies it `irreversible`, skips it, and leaves the ledger row in place.
+
+Same `npm run demo` run (generated `2026-10-01T18:17:07.905Z`). Terminal colors stripped; the words are unchanged.
+
+```text
+[1] Freeze     Identity alex.chen@acme.example frozen; 3 live sessions blocked from minting new API calls.
+[2] Revoke     Revoked 3 OAuth tokens (tok-salesforce-alex-2026, tok-slack-alex-2026, tok-github-alex-2026). PATs, guests, collaborators, and webhooks are untouched.
+```
+
+```text
+• eff-m06-sf-payment-money: Left in place: Finalized payments are not magically voided. Finance/bank recall is out of band and may fail.
+```
+
+From `out/trustlink-report.md` of that run:
+
+```markdown
+- ✅ **payments_remain_auditable** — 1 finalized payment(s) retained on the ledger
+```
+
+```markdown
+| Metric | TrustLink | Revoke-only |
+| --- | --- | --- |
+| Time (ms) | 11.93 | 0.57 |
+| Repair coverage | 17/17 (100%) | 0/17 (0%) |
+| Residual effects | 12 | 23 |
+| UNKNOWN abstentions | 3 | n/a |
+| Irreversible left | 3 | 3 |
+| False undo positives | 0 | 0 |
+| Invariants held | 12/12 | 3/12 |
+| Leftover attack paths | 0 | 6 |
+```
+
+Wall-clock time is that run only.
+
 When a compromised identity is frozen and its OAuth tokens are revoked, the usual runbook stops there. Shares, webhooks, guests, PATs, public repos, and config drift **keep working**. This repo is a public, MIT-licensed MVP that demonstrates a more honest next step on **synthetic** Salesforce, Slack, and GitHub tenants:
 
 1. Freeze + revoke the compromised identity  

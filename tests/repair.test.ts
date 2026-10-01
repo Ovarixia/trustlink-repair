@@ -76,6 +76,40 @@ describe("TrustLink vs revoke-only", () => {
     expect(trustlink.metrics.leftoverAttackPaths).toBe(0);
   });
 
+  it("counts residual risk that remains after a successful compensation", () => {
+    const repairedWithResidual = trustlink.steps.filter(
+      (s) =>
+        (s.outcome === "executed" || s.outcome === "already_satisfied") &&
+        s.postcondition?.holds === true &&
+        s.residualRemains === true,
+    );
+    const irreversibleOrUnknown = trustlink.effects.filter(
+      (e) => e.classification === "irreversible" || e.classification === "UNKNOWN",
+    );
+    const unrepaired = trustlink.effects.filter((e) => {
+      if (e.classification === "irreversible" || e.classification === "UNKNOWN") return false;
+      const step = trustlink.steps.find((s) => s.effectId === e.id);
+      const repaired =
+        (step?.outcome === "executed" || step?.outcome === "already_satisfied") &&
+        step.postcondition?.holds === true;
+      return !repaired;
+    });
+    expect(repairedWithResidual.map((s) => s.effectId)).toEqual(
+      expect.arrayContaining([
+        "eff-m07-sf-contact-email-email",
+        "eff-m15-gh-push-code",
+      ]),
+    );
+    expect(trustlink.metrics.residualActiveEffects).toBe(
+      irreversibleOrUnknown.length + unrepaired.length + repairedWithResidual.length,
+    );
+    expect(trustlink.metrics.residualActiveEffects).toBeGreaterThan(irreversibleOrUnknown.length);
+    expect(revokeOnly.metrics.residualActiveEffects).toBe(revokeOnly.effects.length);
+    expect(revokeOnly.metrics.residualActiveEffects).toBeGreaterThan(
+      trustlink.metrics.residualActiveEffects,
+    );
+  });
+
   it("re-onboards least privilege and proves old OAuth is dead", () => {
     expect(trustlink.reonboard?.leastPrivilege).toBe(true);
     const world = cloneWorld(seeded);
